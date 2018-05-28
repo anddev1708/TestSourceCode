@@ -31,26 +31,19 @@ public class LoginActivity extends AppCompatActivity {
 
     private LoginButton loginButton;
     private CallbackManager callbackManager;
-    private ProfileTracker profileTracker;
 
     private TextView tvStatus;
     private Button btnLoadData;
     private ProgressBar progressBar;
     private SessionData mSessionData;
 
+    private final static String TAG = "Login";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         callbackManager = CallbackManager.Factory.create();
-        profileTracker = new ProfileTracker() {
-            @Override
-            protected void onCurrentProfileChanged(Profile oldProfile, Profile newProfile) {
-                updateProfileView(newProfile);
-            }
-        };
-        profileTracker.startTracking();
-
         setContentView(R.layout.activity_login);
 
 
@@ -59,22 +52,51 @@ public class LoginActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
         tvStatus = findViewById(R.id.tv_status);
 
+        LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult result) {
+                Log.e("TAG", "Da login ##########");
+            }
 
-        if (isLoggedIn()) {
-            Profile profile = Profile.getCurrentProfile();
-            Log.d("TAG", profile.getFirstName());
-            AccessToken token = AccessToken.getCurrentAccessToken();
-            mSessionData.setObjectAsString(SessionData.TOKEN, token.getToken());
-            goToMainScreen();
-        }
+            @Override
+            public void onCancel() {
 
-        /*try {
-            Profile profile = Profile.getCurrentProfile();
-            updateProfileView(profile);
-        } catch (NullPointerException e) {
-            tvStatus.setText("Status: ready");
-        }*/
-        setCallbackManager();
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+
+        loginButton.setReadPermissions("email", "public_profile");
+        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                Log.d(TAG, "facebook:onSuccess:" + loginResult);
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "facebook:onCancel");
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.d(TAG, "facebook:onError", error);
+                // ...
+            }
+        });
+    }
+
+    private void handleFacebookAccessToken(AccessToken token){
+        Toast.makeText(LoginActivity.this, String.format("User ID: %s\n Auth Token: %s",
+                token.getUserId(), token.getToken()), Toast.LENGTH_SHORT).show();
+
+        //mSessionData.setObjectAsString(SessionData.TOKEN, token.getToken());
+        //getProfile(loginResult);
     }
 
     private void getProfile(LoginResult loginResult){
@@ -161,27 +183,5 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         callbackManager.onActivityResult(requestCode, resultCode, data);
-    }
-
-    protected void onStop() {
-        super.onStop();
-        profileTracker.stopTracking();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Profile profile = Profile.getCurrentProfile();
-        updateProfileView(profile);
-    }
-
-    private void updateProfileView(Profile profile) {
-        if (profile != null) {
-            String status = String.format("Status: logged!\nUser: %s", profile.getName());
-            Log.d("DBG", profile.getProfilePictureUri(200,200).toString());
-            tvStatus.setText(status);
-        } else {
-            tvStatus.setText("Status: ready");
-        }
     }
 }
