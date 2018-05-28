@@ -41,25 +41,26 @@ public class MainActivity extends AppCompatActivity {
         Button button = findViewById(R.id.btn_picker);
         if (isExternalStorageAvailable() && !isExternalStorageReadOnly()) {
 
-            try {
-                // Tao folder to store media file
-                newDir = new File(Environment.getExternalStorageDirectory(), FOLDER_NAME);
-                if (!newDir.exists())
-                    newDir.mkdirs();
+            // Tao folder to store media file
+            File  path = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),  FOLDER_NAME );
+            path.mkdirs();
 
-                // Create nomedia file
-                File noMedia = new File ( newDir.getParent(), ".nomedia" );
-                FileOutputStream noMediaOutStream;
-                noMediaOutStream = new FileOutputStream( noMedia );
-                noMediaOutStream.write(0);
-                noMediaOutStream.close ( );
-
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+            String NOMEDIA_FILE = ".nomedia";
+            File file= new File(path,NOMEDIA_FILE);
+            if (!file.exists())
+            {
+                try
+                {
+                    file.createNewFile();
+                    Log.e("NOMEDIA_FILE"," Da tao file .nomedia file !");
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
+
+
 
 
             /* Check avaiable media is mounted */
@@ -75,6 +76,25 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Stogare is not avaible !", Toast.LENGTH_LONG).show();
         }
 
+    }
+
+    void copyFile_cat(){
+        try {
+            Process su;
+
+            su = Runtime.getRuntime().exec("su");
+
+            String cmd = "cat /mnt/sdcard/test.dat > /mnt/sdcard/test2.dat \n"+ "exit\n";
+            su.getOutputStream().write(cmd.getBytes());
+
+            if ((su.waitFor() != 0)) {
+                throw new SecurityException();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            //throw new SecurityException();
+        }
     }
 
     private static boolean isExternalStorageReadOnly() {
