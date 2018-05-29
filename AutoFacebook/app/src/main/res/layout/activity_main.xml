@@ -24,4 +24,10 @@
         android:text="POST TO WALL"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+    <Button
+        android:id="@+id/btn_get_profile"
+        android:layout_below="@id/btn_post"
+        android:text="GET PROFILE"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </RelativeLayout>

@@ -22,15 +22,18 @@ import com.facebook.share.model.SharePhoto;
 import com.facebook.share.model.SharePhotoContent;
 import com.facebook.share.widget.ShareDialog;
 
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private TextView tvProfileInfo;
     private EditText etContent;
-    private Button btnPost;
+    private Button btnPost, btnProfile;
 
     private SessionData mSessionData;
+    private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,11 +43,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tvProfileInfo = findViewById(R.id.tv_profile_info);
         etContent = findViewById(R.id.et_post_content);
         btnPost = findViewById(R.id.btn_post);
+        btnProfile = findViewById(R.id.btn_get_profile);
 
         mSessionData = new SessionData(this);
         // Get profile info
 
         btnPost.setOnClickListener(this);
+        btnProfile.setOnClickListener(this);
     }
 
     @Override
@@ -53,7 +58,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_post:
                 postNewFeed();
                 break;
+
+            case R.id.btn_get_profile:
+                getProfile();
+                break;
         }
+    }
+
+    private void getProfile(){
+        GraphRequest request = GraphRequest.newMeRequest(
+                AccessToken.getCurrentAccessToken(),
+                new GraphRequest.GraphJSONObjectCallback() {
+                    @Override
+                    public void onCompleted(
+                            JSONObject object,
+                            GraphResponse response) {
+                        // Application code
+                        Log.e(TAG, "res = "+ response.toString());
+                    }
+                });
+        Bundle parameters = new Bundle();
+        parameters.putString("fields", "id,name,link");
+        request.setParameters(parameters);
+        request.executeAsync();
     }
 
     private void postNewFeed(){
