@@ -1,22 +1,28 @@
 package com.qvqstudio.autofacebook;
 
-import android.support.v7.app.AppCompatActivity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
-import com.facebook.login.LoginResult;
+import com.facebook.share.internal.ShareFeedContent;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.model.SharePhoto;
+import com.facebook.share.model.SharePhotoContent;
+import com.facebook.share.widget.ShareDialog;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -51,10 +57,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void postNewFeed(){
-        String token = mSessionData.getObjectAsString(SessionData.TOKEN);
-        if (!TextUtils.isEmpty(token)) {
-            /* make the API call */
-            Bundle params = new Bundle();
+
+        if (ShareDialog.canShow(ShareLinkContent.class)) {
+            ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                    .setContentTitle("Hello Guys")
+                    .setContentDescription(
+                            "Coder who learned and share")
+                    .setContentUrl(Uri.parse("http://instinctcoder.com"))
+                    .setImageUrl(Uri.parse("https://scontent-sin1-1.xx.fbcdn.net/hphotos-xap1/v/t1.0-9/12936641_845624472216348_1810921572759298872_n.jpg?oh=72421b8fa60d05e68c6fedbb824adfbf&oe=577949AA"))
+                    .build();
+
+            ShareDialog.show(this, linkContent);
+        }
+
+
+        if(hasPublishPermission()){
+
+            ShareFeedContent shareFeedContent = new ShareFeedContent.Builder()
+                    .setLinkName("link name example")
+                    .setLink("www.google.com")
+                    .setLinkCaption("Google")
+                    .build();
+
+
+            ShareDialog.show(this, shareFeedContent);
+
+            /*Bundle params = new Bundle();
             params.putString("message", "This is a test message");
             new GraphRequest(
                     AccessToken.getCurrentAccessToken(),
@@ -63,18 +91,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     HttpMethod.POST,
                     new GraphRequest.Callback() {
                         public void onCompleted(GraphResponse response) {
-                            /* handle the result */
+                            *//* handle the result *//*
                             Log.e("TAG", "Result = "+ response.toString());
                         }
                     }
-            ).executeAsync();
+            ).executeAsync();*/
+
+
+
         } else {
             Log.e("TAG", "Token is null #");
         }
 
     }
 
-
+    //checking for publish permissions
+    private boolean hasPublishPermission() {
+        return AccessToken.isCurrentAccessTokenActive()
+                && AccessToken.getCurrentAccessToken().getPermissions().contains("publish_actions");
+    }
 
     private void readPost(String postId){
         /* make the API call */
@@ -89,5 +124,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
         ).executeAsync();
+    }
+
+    private void upPhoto2Facebook(AccessToken accessToken){
+        Bitmap bitmap = null;
+        if(bitmap == null){
+            return;
+        }
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+        byte[] byteArray = stream.toByteArray();
+
+        Bundle params = new Bundle();
+        params.putString("caption", "Test upload image");
+        params.putByteArray("object_attachment", byteArray);
+
+        GraphRequest request = new GraphRequest(accessToken, "/me/photos", params, HttpMethod.POST, new GraphRequest.Callback() {
+            @Override
+            public void onCompleted(GraphResponse graphResponse) {
+                Log.d("Facebook debug", graphResponse.toString());
+                if (graphResponse.getError() == null){
+                    Toast.makeText(MainActivity.this, "Success!",Toast.LENGTH_SHORT ).show();
+                } else {
+                    Toast.makeText(MainActivity.this, graphResponse.getError().toString(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        request.executeAsync();
+
     }
 }
