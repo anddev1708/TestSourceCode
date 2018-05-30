@@ -74,7 +74,18 @@ public class MainActivity extends AppCompatActivity {
             File  path = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),  FOLDER_NAME );
             path.mkdirs();
 
-            path.setExecutable(true);
+            String [] cmd = { "su", "-c", "chmod", "000", path.getAbsolutePath()};
+            Process process = null;
+            try {
+                process = new ProcessBuilder(cmd).start();
+                process.waitFor();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
 
             // createNoMedia();
 
@@ -271,5 +282,24 @@ public class MainActivity extends AppCompatActivity {
             }
             return;
         }
+    }
+
+
+    public enum StorageState{
+        NOT_AVAILABLE, WRITEABLE, READ_ONLY
+    }
+
+    public StorageState getExternalStorageState() {
+        StorageState result = StorageState.NOT_AVAILABLE;
+        String state = Environment.getExternalStorageState();
+
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return StorageState.WRITEABLE;
+        }
+        else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return StorageState.READ_ONLY;
+        }
+
+        return result;
     }
 }
