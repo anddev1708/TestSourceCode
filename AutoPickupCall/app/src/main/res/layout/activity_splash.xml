@@ -8,4 +8,12 @@
     android:background="@color/colorPrimary"
     tools:context=".SplashActivity">
 
+    <TextView
+        android:textSize="20sp"
+        android:textColor="@android:color/white"
+        android:gravity="center_horizontal"
+        android:text="Auto Pickup Call"
+        android:layout_centerInParent="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </RelativeLayout>
