@@ -1,23 +1,36 @@
 package com.qvqstudio.testhidefile;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -82,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     private void hideFile(String filePath){
 
         File selectFile = new File(filePath);
@@ -91,11 +106,40 @@ public class MainActivity extends AppCompatActivity {
         }
 
         File hiddenFile = new File(HIDEEN_PATH, "abc.jpg");
-        if(selectFile.renameTo(hiddenFile)){
+
+
+        if (selectFile.exists()){
+            Log.e("TAG", "File selected is exist");
+        } else {
+            Log.e("TAG", "File selected is not exist #");
+        }
+
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            in = new FileInputStream(selectFile);
+            out = new FileOutputStream(hiddenFile);
+
+            // Copy the bits from instream to outstream
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            in.close();
+            out.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        /*if(selectFile.renameTo(hiddenFile)){
             Toast.makeText(this, "Hidden file is success !", Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(this, "Hidden file is failed !", Toast.LENGTH_LONG).show();
-        }
+        }*/
     }
 
     @Override
@@ -109,16 +153,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         switch (requestCode) {
             case 7:
                 if (resultCode == RESULT_OK) {
+                    Uri fileUri = data.getData();
+                    String fullPath = null;
+                    if (fileUri != null) {
+                        fullPath = fileUri.getPath();
+                    }
 
-                    String pathHolder = data.getData().getPath();
-                    Toast.makeText(MainActivity.this, pathHolder, Toast.LENGTH_LONG).show();
-                    hideFile(pathHolder);
+                    Log.e("TAG", "Show path = "+ fullPath);
+                    Toast.makeText(this, "Fie path selected = "+ fullPath, Toast.LENGTH_LONG).show();
+
+                    File f = new File(fullPath);
+                    if(f.exists()){
+                        Log.e("TAG", "File ton tai");
+                    } else {
+                        Log.e("TAG", "File khong ton tai");
+                    }
+                    // hideFile(fullPath);
 
                 }
                 break;
@@ -164,17 +222,5 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /* Test move function in android */
-    private String getRealPathFromURI(Uri contentURI) {
-        String result;
-        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) { // Source is Dropbox or other similar local file path
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
-    }
+
 }
