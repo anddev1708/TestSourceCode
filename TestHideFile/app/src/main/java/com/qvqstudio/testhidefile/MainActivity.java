@@ -3,7 +3,10 @@ package com.qvqstudio.testhidefile;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -78,6 +81,14 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case 7:
                 if (resultCode == RESULT_OK) {
+
+                    Uri pickedImage = data.getData();
+                    // Let's read picked image path using content resolver
+                    String[] filePath = { MediaStore.Images.Media.DATA };
+                    Cursor cursor = getContentResolver().query(pickedImage, filePath, null, null, null);
+                    cursor.moveToFirst();
+                    String imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]));
+
 
                     /*String pathHolder = data.getData().getPath();
                     Toast.makeText(MainActivity.this, pathHolder, Toast.LENGTH_LONG).show();
