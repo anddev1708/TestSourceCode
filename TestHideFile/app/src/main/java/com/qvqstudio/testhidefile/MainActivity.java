@@ -1,24 +1,45 @@
 package com.qvqstudio.testhidefile;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+
+    private final static String HIDEEN_PATH = Environment.getExternalStorageDirectory().getPath() + "/xyz";
+    private boolean isInitDirOk = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,39 +50,98 @@ public class MainActivity extends AppCompatActivity {
 
         // Create dir if not exist
         if(getExternalStorageState() == StorageState.WRITEABLE){
-            File dir = new File(Environment.getExternalStorageDirectory().getPath() + "/xyz/");
-            if(!dir.exists()) dir.mkdirs();
-
-//            File hideDir = new File(Environment.getExternalStorageDirectory().getPath() + "/.xyz/");
-//            if(!hideDir.exists()) hideDir.mkdirs();
+            /* Check hidden folder*/
+            initDir();
         }
 
         Button btnSelectFile = findViewById(R.id.btn_select_file);
         btnSelectFile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-//                intent.setType("*/*");
-//                startActivityForResult(intent, 7);
 
-                hideFile();
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.setType("*/*");
+                    startActivityForResult(intent, 7);
+
+
             }
         });
 
     }
 
-
-    private void hideFile(){
-        String dir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/xyz";
-
-        File file = new File(dir);
-        String dirHide = Environment.getExternalStorageDirectory().getAbsolutePath() + "/.xyz";
-        File fileHide = new File(dirHide);
-        if (file.exists() && !fileHide.exists()) {
-            file.renameTo(fileHide);
-        } else if(!file.exists()) {
-            fileHide.mkdir();
+    private void initDir(){
+        File hiddenFolder = new File(HIDEEN_PATH);
+        if(hiddenFolder.exists()){
+            isInitDirOk = true;
+        } else {
+            File dir = new File(HIDEEN_PATH);
+            if(!dir.exists()){
+                if(dir.mkdirs())
+                    isInitDirOk = true;
+            }
         }
+
+        // Create noMedia file to hidden with gallery
+        createNoMediaFile();
+    }
+
+    private void createNoMediaFile(){
+        // Create .noMedia file
+        File newMediaFile = new File(HIDEEN_PATH, ".nomedia");
+        if(!newMediaFile.exists()) {
+            try {
+                newMediaFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+
+    private void hideFile(String filePath){
+
+        File selectFile = new File(filePath);
+        if(!isInitDirOk){
+            Toast.makeText(this, "Init hidden dir is failed", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        File hiddenFile = new File(HIDEEN_PATH, "abc.jpg");
+
+
+        if (selectFile.exists()){
+            Log.e("TAG", "File selected is exist");
+        } else {
+            Log.e("TAG", "File selected is not exist #");
+        }
+
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            in = new FileInputStream(selectFile);
+            out = new FileOutputStream(hiddenFile);
+
+            // Copy the bits from instream to outstream
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            in.close();
+            out.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        /*if(selectFile.renameTo(hiddenFile)){
+            Toast.makeText(this, "Hidden file is success !", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Hidden file is failed !", Toast.LENGTH_LONG).show();
+        }*/
     }
 
     @Override
@@ -74,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
     }
+
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -89,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                     cursor.moveToFirst();
                     String imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]));
 
-
+                    hideFile(imagePath);
                     /*String pathHolder = data.getData().getPath();
                     Toast.makeText(MainActivity.this, pathHolder, Toast.LENGTH_LONG).show();
 
@@ -97,6 +179,22 @@ public class MainActivity extends AppCompatActivity {
                     moveFile(oldDir, newDir);*/
 
                     // String pathHolder = data.getData().getPath();
+                    /*Uri fileUri = data.getData();
+                    String fullPath = null;
+                    if (fileUri != null) {
+                        fullPath = fileUri.getPath();
+                    }
+
+                    Log.e("TAG", "Show path = "+ fullPath);
+                    Toast.makeText(this, "Fie path selected = "+ fullPath, Toast.LENGTH_LONG).show();
+
+                    File f = new File(fullPath);
+                    if(f.exists()){
+                        Log.e("TAG", "File ton tai");
+                    } else {
+                        Log.e("TAG", "File khong ton tai");
+                    }*/
+                    // hideFile(fullPath);
 
                 }
                 break;
@@ -109,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.CAMERA
     };
 
-    private boolean checkPermissions() {
+    private void checkPermissions() {
         int result;
         List<String> listPermissionsNeeded = new ArrayList<>();
         for (String p : permissions) {
@@ -120,9 +218,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if (!listPermissionsNeeded.isEmpty()) {
             ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), 100);
-            return false;
         }
-        return true;
     }
 
     public enum StorageState{
@@ -142,4 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
         return result;
     }
+
+    /* Test move function in android */
+
 }
